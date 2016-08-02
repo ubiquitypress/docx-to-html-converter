@@ -1,26 +1,18 @@
 import os
-
-from docx2html import convert
-from shutil import copyfile
-
-
-def handle_image(image_id, relationship_dict):
-    image_path = relationship_dict[image_id]
-    _, filename = os.path.split(image_path)
-    destination_path = os.path.join('/tmp', filename)
-    copyfile(image_path, destination_path)
-
-    return 'file://%s' % destination_path
-
+import subprocess
 
 def docx_converter():
 
+    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
     while True:
         docx_path = raw_input('Please enter path to folder containing .docx files:')
+        docx_path = os.path.join(BASE_DIR, docx_path)
         docx_path_exists = os.path.exists(docx_path)
 
         if docx_path_exists:
             write_path = raw_input('Please enter path to write html files to (conversion begins automatically): ')
+            write_path = os.path.join(BASE_DIR, write_path)
             write_path_exists = os.path.exists(write_path)
 
             if write_path_exists:
@@ -30,14 +22,13 @@ def docx_converter():
 
                             if ext == '.docx':
                                 file_path = os.path.join(docx_path, file)
-                                html = convert(file_path, image_handler=handle_image)
-                                print 'Converting: ' + file
+                                _id = file[:3]
+                                print "pandoc -s {0} -t markdown -o {1}.md --extract-media={1}".format(file_path, _id)
+                                
 
-                                # Give new html file same name as .docx original
-                                html_file_path = os.path.join(write_path, os.path.splitext(file)[0])
-                                html_file = open(html_file_path, 'w')
-                                html_file.write(html)
-                                html_file.close()
+                                subprocess.Popen("pandoc -s {0} -t markdown -o sdo/{1}.md --extract-media={2}/{1}/".format(file_path, _id, write_path), shell=True)
+
+                                print 'Converting: ' + file
 
             else:
                 print 'Please enter a valid path.'
